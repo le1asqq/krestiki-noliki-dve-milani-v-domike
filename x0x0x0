@@ -1,0 +1,114 @@
+import tkinter as tk
+from tkinter import messagebox
+
+class TicTacToe:
+    def __init__(self, root, mode, back_callback):
+        self.root = root
+        self.root.title("Крестики-нолики")
+        self.mode = mode  # Режим игры: "PvP" или "PvC"
+        self.back_callback = back_callback
+
+        self.board = [' ' for _ in range(9)]  # Создаем пустую доску
+        self.current_player = "X"  # Игрок "X" начинает первым
+
+        self.buttons = [tk.Button(root, text=' ', font='normal 20 bold', width=5, height=2,
+                                  command=lambda i=i: self.on_button_click(i)) for i in range(9)]
+
+        for i, button in enumerate(self.buttons):
+            row, col = divmod(i, 3)
+            button.grid(row=row, column=col)
+
+        self.back_button = tk.Button(root, text="Назад", font='normal 15', command=self.go_back)
+        self.back_button.grid(row=3, column=0, columnspan=3, sticky="nsew")
+
+    def on_button_click(self, index):
+        if self.board[index] == ' ':
+            self.board[index] = self.current_player
+            self.buttons[index].config(text=self.current_player)
+            if self.check_winner(self.current_player):
+                messagebox.showinfo("Победа", f"Игрок {self.current_player} выиграл!")
+                self.reset_game()
+            elif ' ' not in self.board:
+                messagebox.showinfo("Ничья", "Ничья!")
+                self.reset_game()
+            else:
+                self.current_player = "O" if self.current_player == "X" else "X"
+                if self.mode == "PvC" and self.current_player == "O":
+                    self.computer_move()
+
+    def computer_move(self):
+        index = self.find_best_move()
+        self.board[index] = self.current_player
+        self.buttons[index].config(text=self.current_player)
+        if self.check_winner(self.current_player):
+            messagebox.showinfo("Победа", f"Игрок {self.current_player} выиграл!")
+            self.reset_game()
+        elif ' ' not in self.board:
+            messagebox.showinfo("Ничья", "Ничья!")
+            self.reset_game()
+        else:
+            self.current_player = "X"
+
+    def find_best_move(self):
+        for i in range(9):
+            if self.board[i] == ' ':
+                self.board[i] = "O"
+                if self.check_winner("O"):
+                    self.board[i] = ' '
+                    return i
+                self.board[i] = ' '
+        
+        for i in range(9):
+            if self.board[i] == ' ':
+                self.board[i] = "X"
+                if self.check_winner("X"):
+                    self.board[i] = ' '
+                    return i
+                self.board[i] = ' '
+        
+        for i in range(9):
+            if self.board[i] == ' ':
+                return i
+
+    def check_winner(self, player):
+        win_conditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],  # горизонтальные
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],  # вертикальные
+            [0, 4, 8], [2, 4, 6]              # диагональные
+        ]
+        for condition in win_conditions:
+            if all(self.board[i] == player for i in condition):
+                return True
+        return False
+
+    def reset_game(self):
+        self.board = [' ' for _ in range(9)]
+        self.current_player = "X"
+        for button in self.buttons:
+            button.config(text=' ')
+
+    def go_back(self):
+        self.root.destroy()
+        self.back_callback()
+
+def choose_mode():
+    def start_game(mode):
+        mode_window.destroy()
+        root = tk.Tk()
+        game = TicTacToe(root, mode, choose_mode)
+        root.mainloop()
+
+    mode_window = tk.Tk()
+    mode_window.title("Выбор режима игры")
+
+    tk.Label(mode_window, text="Выберите режим игры:", font='normal 15 bold').pack(pady=10)
+
+    tk.Button(mode_window, text="Игрок против Игрока", font='normal 15', command=lambda: start_game("PvP")).pack(pady=5)
+    tk.Button(mode_window, text="Игрок против Компьютера", font='normal 15', command=lambda: start_game("PvC")).pack(pady=5)
+
+    mode_window.mainloop()
+
+
+if __name__ == "__main__":
+    choose_mode()
+
